@@ -1,0 +1,39 @@
+{
+  "name": "aremos-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "AREMOS Backend - REST API für die AREMOS Lernplattform",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/multipart": "*",
+    "@fastify/rate-limit": "^10.3.0",
+    "@prisma/client": "^6.17.0",
+    "bcryptjs": "*",
+    "dotenv": "^17.2.3",
+    "fastify": "*",
+    "joi": "*",
+    "jsonwebtoken": "*",
+    "node-cron": "*"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "*",
+    "@types/joi": "*",
+    "@types/jsonwebtoken": "*",
+    "@types/node": "*",
+    "prisma": "^6.17.0",
+    "ts-node-dev": "*",
+    "typescript": "*"
+  }
+}

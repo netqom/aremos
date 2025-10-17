@@ -1,0 +1,1 @@
+Diese Migration ist ein Platzhalter. Erzeuge die echten Migrationen mit Prisma CLI.
