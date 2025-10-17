@@ -1,0 +1,168 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                   Int       @id @default(autoincrement())
+  name                 String    @unique
+  password             String
+  tokenVersion         Int       @default(0)
+  lastActiveAt         DateTime? @default(now())
+  deletionScheduledAt  DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  decks                Deck[]
+  notifications        Notification[]
+  classroomMemberships ClassroomMembership[]
+  learningSessions     LearningSession[]
+  ownedClassrooms      Classroom[] @relation("ClassroomOwner")
+
+  @@index([lastActiveAt])
+}
+
+model Deck {
+  id           Int       @id @default(autoincrement())
+  name         String
+  version      Int       @default(1)
+  ownerId      Int
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  copiedFromId Int?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  cards        Card[]
+  srDays       SpacedRepetitionDay[]
+  sessions     LearningSession[]
+  classroomLinks ClassroomDeck[]
+  notifications Notification[]
+
+  @@index([ownerId])
+  @@index([copiedFromId])
+  @@index([ownerId, updated_at])
+}
+
+model Card {
+  id               Int      @id @default(autoincrement())
+  deckId           Int
+  deck             Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  question         String
+  answer           String
+  questionImageUrl String?
+  answerImageUrl   String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  
+  interactions     CardInteraction[]
+
+  @@index([deckId])
+}
+
+model SpacedRepetitionDay {
+  id         Int      @id @default(autoincrement())
+  deckId     Int
+  deck       Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  day        DateTime
+  dayStr     String
+  created_at DateTime @default(now())
+
+  @@unique([deckId, dayStr])
+  @@index([deckId, day])
+}
+
+model Classroom {
+  id         Int      @id @default(autoincrement())
+  name       String
+  ownerId    Int
+  owner      User     @relation("ClassroomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  lessonText String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  members    ClassroomMembership[]
+  resources  ClassroomDeck[]
+}
+
+model ClassroomMembership {
+  id           Int        @id @default(autoincrement())
+  classroomId  Int
+  userId       Int
+  classroom    Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  created_at   DateTime   @default(now())
+
+  @@unique([classroomId, userId])
+  @@index([userId])
+}
+
+model ClassroomDeck {
+  id          Int        @id @default(autoincrement())
+  classroomId Int
+  deckId      Int
+  classroom   Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  deck        Deck       @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  created_at  DateTime   @default(now())
+
+  @@unique([classroomId, deckId])
+  @@index([deckId])
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deckId     Int?
+  deck       Deck?    @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  text       String
+  read_at    DateTime?
+  created_at DateTime @default(now())
+  expires_at DateTime
+
+  @@index([userId, created_at])
+  @@index([userId, expires_at])
+  @@index([expires_at])
+}
+
+model SystemNotification {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  message    String
+  read_at    DateTime?
+  created_at DateTime @default(now())
+  expires_at DateTime
+
+  @@index([userId, expires_at])
+}
+
+model LearningSession {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  deckId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck        Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  started_at  DateTime @default(now())
+  completedAt DateTime?
+  durationMs  Int
+  interactions CardInteraction[]
+
+  @@index([userId, completedAt])
+  @@index([deckId, completedAt])
+}
+
+model CardInteraction {
+  id         Int      @id @default(autoincrement())
+  sessionId  Int
+  cardId     Int
+  session    LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  round      Int
+  isCorrect  Boolean
+  created_at DateTime @default(now())
+
+  @@index([sessionId, cardId, round])
+}
